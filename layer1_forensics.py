@@ -36,13 +36,18 @@ def analyze_fft(image_path):
     if len(high_freq_spectrum) == 0:
         return 0.0
         
-    variance = np.var(high_freq_spectrum)
+    mean = np.mean(high_freq_spectrum)
+    std = np.std(high_freq_spectrum)
     
-    # Normalize variance to a 0-1 score (dummy normalization thresholds for demonstration)
-    variance_min = 100.0
-    variance_max = 300.0
+    # Real camera sensors produce high-frequency random noise peaks.
+    # AI models tend to be unnaturally smooth in the noise floor.
+    peaks = np.sum(high_freq_spectrum > (mean + 3 * std))
     
-    score = (variance - variance_min) / (variance_max - variance_min)
+    # Invert the metric: fewer peaks = higher AI score
+    peaks_min = 100.0
+    peaks_max = 800.0
+    score = 1.0 - ((peaks - peaks_min) / (peaks_max - peaks_min))
+    
     return float(np.clip(score, 0.0, 1.0))
 
 def analyze_ela(image_path, quality_resave=90):
